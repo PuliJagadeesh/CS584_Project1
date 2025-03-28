@@ -1,3 +1,8 @@
 numpy
 pytest
 ipython
+scipy
+matplotlib
+pandas
+tqdm
+sklearn-learn
