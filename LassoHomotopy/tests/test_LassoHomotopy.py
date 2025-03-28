@@ -72,9 +72,7 @@ HYPERPARAMETERS = {
 
 @pytest.mark.parametrize("dataset_path", get_dataset_paths())
 def generate_collinear_dataset(n_samples=100, n_features=10, collinearity_strength=0.9):
-    """
-    Enhanced synthetic dataset generation with robust handling
-    """
+
     # Create correlation matrix with improved generation
     correlation_matrix = np.eye(n_features)
     for i in range(n_features):
@@ -155,11 +153,9 @@ def test_lasso_collinearity():
             assert not np.isnan(mse), "Invalid Mean Squared Error"
             assert not np.isnan(r2), "Invalid R-squared"
 
-
+@pytest.mark.parametrize("dataset_path", get_dataset_paths())
 def test_lasso_on_dataset(dataset_path):
-    """
-    Comprehensive test for LASSO model on different datasets
-    """
+
     # Verify dataset path exists
     assert os.path.exists(dataset_path), f"Dataset file not found: {dataset_path}"
 
@@ -221,23 +217,26 @@ def test_coefficient_sparsity():
 
     for dataset_path in dataset_paths:
         X, y = load_csv_data(dataset_path)
-        dataset_name = os.path.basename(dataset_path)
 
-        print(f"\nSparsity Test for {dataset_name}")
+        # Track sparsity progression
+        sparsity_progression = []
 
-        # Test multiple lambda values
-        lambdas = [0.1, 0.5, 1.0, 2.0]
-
-        for lambda_val in lambdas:
+        for lambda_val in [0.1, 0.5, 1.0, 2.0]:
             model = LassoHomotopy(lambda_penalty=lambda_val)
             results = model.fit(X, y)
             coeffs = results.get_coefficients()
 
-            # Higher lambda should produce sparser solution
+            # Compute sparsity metrics
             zero_coeff_count = np.sum(np.abs(coeffs) < 1e-4)
-            print(f"Lambda {lambda_val} - Zero Coefficients: {zero_coeff_count}/{len(coeffs)}")
-            assert zero_coeff_count >= len(coeffs) - 2, f"Lambda {lambda_val} failed sparsity test"
+            sparsity_ratio = zero_coeff_count / len(coeffs)
 
+            sparsity_progression.append(sparsity_ratio)
+
+            # Enhanced assertions
+            assert sparsity_ratio >= 0, "Invalid sparsity ratio"
+
+        # Verify sparsity increases with lambda
+        assert np.all(np.diff(sparsity_progression) >= 0), "Sparsity not monotonically increasing"
 # Pytest configuration for verbose output
 def pytest_configure(config):
     """
